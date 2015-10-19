@@ -38,6 +38,9 @@ This application carries out textual mining on twitter data related to Donald Tr
 
 1. The code for this App can be found at GitHub following this link: [TrumpTwitterApp](https://github.com/kklarsen/trumptwitterapp).
 2. Nathan Danneman & Richard Heimann, ["Social Media Mining with R"](https://www.packtpub.com/big-data-and-business-intelligence/social-media-mining-r), (2014), Packt Publishing.
+3. Ingo Feinerer, Kurt Hornik, & David Meyer, ["Text Mining Infrastructure in R"](http://www.jstatsoft.org/article/view/v025i05/v25i05.pdf), J. Stat. Software, (March 2008), Vol. 25, Issue 5.
+4. Bettina Grun & Kurt Hornik, ["topicmodels: An R Package for Fitting Topic Models"](https://cran.r-project.org/web/packages/topicmodels/vignettes/topicmodels.pdf),J. Stat. Software, (May 2011), Vol. 40, Issue 13. 
+4. Ian Fellows, ["Package 'wordcloud'"](https://cran.r-project.org/web/packages/wordcloud/wordcloud.pdf), (Febr. 2015). Fellow's blog ["Fells Stats - know your data"](http://blog.fellstat.com/?cat=11) is a very recommendable source of what you can do with the "wordcloud" package.
 2. Yanchang Zhao, ["Text Mining with R - Twitter Data Analysis"](http://www.rdatamining.com/docs/text-mining-with-r-of-twitter-data-analysis), (28 May 2015).
 2. Jeffrey Breen, ["R by example: mining Twitter for consumer attitudes towards airlines."](https://jeffreybreen.wordpress.com/2011/07/04/twitter-text-mining-r-slides/), (June 2011).
 3. On [Hierarchical Cluster Analysis in R](http://www.r-tutor.com/gpu-computing/clustering/hierarchical-cluster-analysis).

@@ -2,13 +2,24 @@
 
 library(wordcloud)
 library(tm)
-library(memoise)
-library(lubridate)
 library(markdown)
 
-getTwitterInterest <- function(mFile) {
+set.seed(123)
+
+Cleaning4Assocation <- function(mCorpus0) {
   
-#  myFile <- paste0("interest",strftime(myDate, "%d"),"Oct15.csv")
+  interest_corpus <- tm_map(mCorpus0,removePunctuation)
+  interest_corpus <- tm_map(interest_corpus,content_transformer(tolower))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,stopwords("english")))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald trump"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"realdonaldtrump"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"trumps"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"falsenanaa"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"href"))
+  
+}
+
+getTwitterInterest <- function(mFile) {
   
   interest <<- read.csv(mFile, 
                        header = TRUE, 
@@ -22,9 +33,9 @@ getTwitterInterest <- function(mFile) {
   interest_list <- gsub("[[:digit:]]", "", interest_list)
   interest_list <- iconv(interest_list, "latin1", "ASCII", sub="")
   
-  interest_corpus <- Corpus(VectorSource(interest_list))
+  interest_corpus0 <<- Corpus(VectorSource(interest_list))
   
-  interest_corpus <- tm_map(interest_corpus,removePunctuation)
+  interest_corpus <- tm_map(interest_corpus0,removePunctuation)
   interest_corpus <- tm_map(interest_corpus,content_transformer(tolower))
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,stopwords("english")))
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald trump"))
@@ -55,6 +66,31 @@ fit <- hclust(distMatrix, method = "complete")
 
 }
 
+TwitterTopicModel <- function(mCorpus) {
+  
+ 
+  interest.tdm <- TermDocumentMatrix(mCorpus)
+  
+  dtm <- as.DocumentTermMatrix(interest.tdm)
+  
+  rowTotals <- apply(dtm , 1, sum) #Find the sum of words in each Document
+  dtm.new   <- dtm[rowTotals> 0, ]
+  
+  lda <- LDA(dtm.new, k =8)
+  tweetTopics <- terms(lda, 6)
+  
+}
+
+TwitterAssociation <- function(mWord) {
+  
+  mCorpus <- Cleaning4Assocation(interest_corpus0)
+  
+  interest.tdm <- TermDocumentMatrix(mCorpus)
+  
+  findAssocs(interest.tdm,mWord,0.5)
+  
+}
+
 function(input, output, session) {
   
     # Define a reactive expression for the document term matrix
@@ -83,12 +119,45 @@ function(input, output, session) {
                     myCorpus <<- getTwitterInterest(myFile)
                     
                   })
+                 
             })
                 
         })
         
-  
+        mTable1 <- reactive({
+          # Change when the "update" button is pressed...
+          
+          input$topics
+          
+          isolate({
+            withProgress({
+              
+              setProgress(message = "Processing Twitter Topic Table...")
+              
+              TwitterTopicModel(myCorpus)
+              
+              })
             
+           })
+        })          
+        
+        mTable2 <- reactive({
+          
+         input$text
+          
+         isolate({
+            withProgress({
+              
+              setProgress(message = "Processing Twitter Associations ...")
+              
+              
+              t(as.data.frame(TwitterAssociation(input$text)[[1]]))
+              
+           })
+            
+          })
+       })          
+          
         # Make the wordcloud drawing predictable during a session
         
        wordcloud_rep <- repeatable(wordcloud)
@@ -129,7 +198,17 @@ function(input, output, session) {
          
         }, height = 600, width = 1200)
        
-       #output$documentation <- renderText({
-       #   includeMarkdown("documentation.md")
-       #})
+    
+        output$table1 <- renderDataTable({
+            
+          xx <- mTable1()
+
+        }, options = list(lengthMenu = c(6), pageLength = 6))
+        
+        output$table2 <- renderDataTable({
+          
+          yy <- mTable2()
+          
+        })
+
 }

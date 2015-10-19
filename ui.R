@@ -2,10 +2,10 @@
 
 library(shiny)
 library(shinyBS)
-library(manipulate)
+#library(manipulate)
 
 minDate <<- "2015-10-01"
-maxDate <<- "2015-10-16"
+maxDate <<- "2015-10-25"
 
 
 fluidPage(
@@ -23,7 +23,7 @@ fluidPage(
                             ),
            
                dateInput("myDate", "Twitter Date:",
-                         value = "2015-10-16",
+                         value = "2015-10-17",
                          min = minDate,
                          max = maxDate,
                          format = "yyyy-mm-dd", 
@@ -45,8 +45,11 @@ fluidPage(
                            min = 1,  max = 10, step = 1,  value = 5),
                
                #actionButton("update","Update", width = "100%" ),
-               bsButton("update","Update", block = TRUE, style = "primary" ),
-               hr()
+               bsButton("update","Update", block = TRUE, style = "danger" ),
+               h4("TrumpTable Controls"),
+               bsButton("topics","Topics", block = TRUE, style = "primary" ),
+               textInput("text", label = h4("Enter word & find associations"), value = "dumb"),
+               fluidRow(column(2, verbatimTextOutput("value")))
                
 
     ),
@@ -57,6 +60,7 @@ fluidPage(
     tabsetPanel(
       
       tabPanel("TrumpCloud", plotOutput("plot") ),
+      tabPanel("TrumpTable", dataTableOutput("table1"), dataTableOutput("table2")),
       tabPanel("Documentation",includeMarkdown("documentation.md"))
       )
     )
