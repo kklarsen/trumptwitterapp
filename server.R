@@ -2,6 +2,7 @@
 
 library(wordcloud)
 library(tm)
+library(topicmodels)
 library(markdown)
 
 set.seed(123)
@@ -76,7 +77,7 @@ TwitterTopicModel <- function(mCorpus) {
   rowTotals <- apply(dtm , 1, sum) #Find the sum of words in each Document
   dtm.new   <- dtm[rowTotals> 0, ]
   
-  lda <- LDA(dtm.new, k =8)
+  lda <- LDA(dtm.new, k = 6)
   tweetTopics <- terms(lda, 6)
   
 }
@@ -158,10 +159,22 @@ function(input, output, session) {
           })
        })          
           
-        # Make the wordcloud drawing predictable during a session
+        
+      observe ( {
+        
+        if (input$topics > 0) {
+          
+          updateTabsetPanel(session, "inTabset", selected = "TrumpTable")
+          
+        }
+        
+      })  
+      
+      # Make the wordcloud drawing "predictable" ensuring that the same seed is used during a session
+      # and generating the same wordcloud for the same data.
         
        wordcloud_rep <- repeatable(wordcloud)
-        
+
        output$plot <- renderPlot({
          
          par(mfrow = c(1,2))
@@ -198,9 +211,12 @@ function(input, output, session) {
          
         }, height = 600, width = 1200)
        
-    
+        ## TrumpTable tab
+        ## Add two tables
+          
         output$table1 <- renderDataTable({
-            
+          
+          
           xx <- mTable1()
 
         }, options = list(lengthMenu = c(6), pageLength = 6))
