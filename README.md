@@ -1,4 +1,4 @@
-# Application Development Project - trumptwitterapp Shiny App.
+# Application Development Project - Shiny App.
 ### (Coursera, devdataprod-033)
 # trumptwitterapp
 
