@@ -1,0 +1,19 @@
+<style>
+
+.small-code pre code {
+  font-size: 0.8em;
+}
+
+
+.midleft {
+    position: fixed;
+    top: 35%;
+    left: 60%;
+}
+
+.mylineH {
+  
+  letter-height:-5.5px
+}
+
+</style>

@@ -4,8 +4,9 @@ library(shiny)
 library(shinyBS)
 
 minDate <<- "2015-10-02"
-maxDate <<- "2015-10-25"
+maxDate <<- "2015-10-23"
 
+rm(list = ls())
 
 fluidPage(
   
@@ -22,7 +23,7 @@ fluidPage(
                             ),
            
                dateInput("myDate", "Twitter Date:",
-                         value = "2015-10-20",
+                         value = "2015-10-22",
                          min = minDate,
                          max = maxDate,
                          format = "yyyy-mm-dd", 
@@ -44,9 +45,9 @@ fluidPage(
                            min = 1,  max = 10, step = 1,  value = 5),
                
                
-               bsButton("update","Update", block = TRUE, style = "danger" ),
+               bsButton("update","Update Analysis!", block = TRUE, style = "danger" ),
                bsButton("topics","TrumpTable - Topics", block = TRUE, style = "primary" ),
-               textInput("text", label = h4("Enter word & find associations"), value = "dumb"),
+               textInput("text", label = h4("Enter word & find associations (e.g., mexico, mexicans, immigrants, america)"), value = "dumb"),
                fluidRow(column(2, verbatimTextOutput("value")))
                
 

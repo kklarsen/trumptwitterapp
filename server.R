@@ -4,31 +4,22 @@ library(wordcloud)
 library(tm)
 library(topicmodels)
 library(markdown)
+library(data.table)
+library(memoise)
 
-set.seed(123)
-
-Cleaning4Assocation <- function(mCorpus0) {
+getTwitterInterest <- memoise( function(mFile) {
   
-  interest_corpus <- tm_map(mCorpus0,removePunctuation)
-  interest_corpus <- tm_map(interest_corpus,content_transformer(tolower))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,stopwords("english")))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald trump"))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"realdonaldtrump"))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"trumps"))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"falsenanaa"))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"href"))
-  
-}
-
-getTwitterInterest <- function(mFile) {
-  
-  interest <<- read.csv(mFile, 
+  interest <- read.csv(mFile, 
                        header = TRUE, 
                        row.names = NULL,
                        fill = TRUE)
   
-  interest_list <- interest$text
+  mDim <<- dim(interest)[1]
   
+  if ( mDim > 5000 ) interest_list <- sample(interest$text,5000)
+  if ( mDim <= 5000 ) interest_list <- interest$text
+  
+
   interest_list <- gsub("http://.*", "", interest_list)
   interest_list <- gsub("http.*", "", interest_list)
   interest_list <- gsub("[[:digit:]]", "", interest_list)
@@ -41,19 +32,26 @@ getTwitterInterest <- function(mFile) {
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,stopwords("english")))
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald trump"))
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"realdonaldtrump"))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald"))
-  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"trump"))
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"trumps"))
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"falsenanaa"))
   interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"href"))
 
-}
+  mCorpus.bis <- interest_corpus
+  interest.bis <<- TermDocumentMatrix(mCorpus.bis)
+  
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"trump"))
+  
+  interest.tdm <<- TermDocumentMatrix(interest_corpus)
+  dtm <<- as.DocumentTermMatrix(interest.tdm)
+  
+  interest_corpus <- interest_corpus
+  
+  
+})
 
-TwitterCluster <- function(mCorpus, mSpars) {
+TwitterCluster <- function(mSpars) {
 
-#Next step going to a term-document matrix analysis
-
-interest.tdm <- TermDocumentMatrix(mCorpus)
 
 # Remove sparse terms from the tdm = term-document matrix
 # Convert the tdm to a data frame
@@ -67,12 +65,7 @@ fit <- hclust(distMatrix, method = "complete")
 
 }
 
-TwitterTopicModel <- function(mCorpus) {
-  
- 
-  interest.tdm <- TermDocumentMatrix(mCorpus)
-  
-  dtm <- as.DocumentTermMatrix(interest.tdm)
+TwitterTopicModel <- function() {
   
   rowTotals <- apply(dtm , 1, sum) #Find the sum of words in each Document
   dtm.new   <- dtm[rowTotals> 0, ]
@@ -83,12 +76,8 @@ TwitterTopicModel <- function(mCorpus) {
 }
 
 TwitterAssociation <- function(mWord) {
-  
-  mCorpus <- Cleaning4Assocation(interest_corpus0)
-  
-  interest.tdm <- TermDocumentMatrix(mCorpus)
-  
-  findAssocs(interest.tdm,mWord,0.5)
+        
+  findAssocs(interest.bis,mWord,0.5)
   
 }
 
@@ -98,6 +87,7 @@ function(input, output, session) {
   
         terms <- reactive({
                 # Change when the "update" button is pressed...
+                
                 input$update
                 
                 isolate({
@@ -106,18 +96,21 @@ function(input, output, session) {
                     setProgress(message = "Processing Twitter corpus...")
                     
                     if (input$choices == "realTrump") {
-                    myFile <<- "realdonaldtrumpOct15.csv"
+                        
+                            myFile <<- "realdonaldtrumpOct15.csv"
                     }
                       
                     if (input$choices == "feedbck") {
-                      myFile <<- paste0("interest",strftime(as.character(input$myDate), "%d"),"Oct15.csv") 
+                        
+                            myFile <<- paste0("interest",strftime(as.character(input$myDate), "%d"),"Oct15.csv") 
                     }
                     
                     if (input$choices == "mainTopics") { 
-                      vv <<- TwitterCluster(myCorpus, input$spars)
+                            
+                        TwitterCluster(input$spars)
                     }  
                       
-                    myCorpus <<- getTwitterInterest(myFile)
+                        getTwitterInterest(myFile)
                     
                   })
                  
@@ -131,11 +124,12 @@ function(input, output, session) {
           input$topics
           
           isolate({
+            
             withProgress({
               
               setProgress(message = "Processing Twitter Topic Table...")
               
-              TwitterTopicModel(myCorpus)
+                TwitterTopicModel()
               
               })
             
@@ -151,9 +145,9 @@ function(input, output, session) {
               
               setProgress(message = "Processing Twitter Associations ...")
               
+                t(as.data.frame(TwitterAssociation(input$text)[[1]]))
               
-              t(as.data.frame(TwitterAssociation(input$text)[[1]]))
-              
+
            })
             
           })
@@ -189,16 +183,16 @@ function(input, output, session) {
                                max.words = max(1,input$max),
                                colors=palette)
          
-         text(x = 0.12, y = 0.0, paste("(based on ",dim(interest)[1], " Tweets)"), 
+         text(x = 0.12, y = 0.0, paste("(based on ",mDim, " Tweets)"), 
               font = 2, 
               cex =1.2, 
               col = "firebrick1")
          
          if (input$choices == "mainTopics") {
          
-           vv <<- TwitterCluster(myCorpus, input$spars)
+           vv <<- TwitterCluster(input$spars)
            
-           plot(vv, main = "Tweeter Topical Clusters", xlab = "Cluster Dendrogram",
+           plot(vv, main = "Twitter Topical Clusters", xlab = "Cluster Dendrogram",
               font.main = 2, 
               cex.main = 2,
               col.main = "firebrick2",

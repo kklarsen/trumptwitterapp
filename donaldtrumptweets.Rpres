@@ -1,0 +1,238 @@
+Donald Trump Twitter Analysis Application
+========================================================
+author: Dr. Kim Kyllesbech Larsen
+date: October, 2015
+transition: rotate
+css: kkl.css
+
+[Check my App out yourself!](http://techneconomy.shinyapps.io/project)
+--
+<div class = "midleft"> <img src = "donaldtrump.png" max-width: 110; max-height: 90> </img> </div>
+
+```{r, echo=FALSE}
+
+library(wordcloud)
+library(tm)
+library(topicmodels)
+library(data.table)
+library(memoise)
+
+getTwitterInterest <- function(mFile) {
+  
+  interest <- read.csv(mFile, 
+                       header = TRUE, 
+                       row.names = NULL,
+                       fill = TRUE)
+  
+  mDim <<- dim(interest)[1]
+  
+  interest_list <- interest$text
+  
+
+  interest_list <- gsub("http://.*", "", interest_list)
+  interest_list <- gsub("http.*", "", interest_list)
+  interest_list <- gsub("[[:digit:]]", "", interest_list)
+  interest_list <- iconv(interest_list, "latin1", "ASCII", sub="")
+  
+  interest_corpus0 <<- Corpus(VectorSource(interest_list))
+  
+  interest_corpus <- tm_map(interest_corpus0,removePunctuation)
+  interest_corpus <- tm_map(interest_corpus,content_transformer(tolower))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,stopwords("english")))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald trump"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"realdonaldtrump"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"trumps"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"falsenanaa"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"href"))
+
+  mCorpus.bis <- interest_corpus
+  interest.bis <<- TermDocumentMatrix(mCorpus.bis)
+  
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"donald"))
+  interest_corpus <- tm_map(interest_corpus,function(x)removeWords(x,"trump"))
+  
+  interest.tdm <<- TermDocumentMatrix(interest_corpus)
+  dtm <<- as.DocumentTermMatrix(interest.tdm)
+  
+  interest_corpus <- interest_corpus
+  
+  
+}
+
+TwitterCluster <- function(mSpars) {
+
+
+# Remove sparse terms from the tdm = term-document matrix
+# Convert the tdm to a data frame
+
+tdm2 <- removeSparseTerms(interest.tdm, sparse = mSpars)
+m2 <- as.matrix(tdm2)
+
+distMatrix <- dist(scale(m2))
+
+fit <- hclust(distMatrix, method = "complete")
+
+}
+
+TwitterTopicModel <- function() {
+  
+  rowTotals <- apply(dtm , 1, sum) #Find the sum of words in each Document
+  dtm.new   <- dtm[rowTotals> 0, ]
+  
+  lda <- LDA(dtm.new, k = 6)
+  tweetTopics <- terms(lda, 6)
+  
+}
+
+TwitterAssociation <- function(mWord) {
+        
+  findAssocs(interest.bis,mWord,0.5)
+  
+}
+
+```
+Donald Trump Twitter Analysis App.
+========================================================
+class: small-code
+
+<small>In October 2015, Donald Trump's own tweets (@realDonaldTrump) as well as his (approx. **4.65 Million**) followers tweets have been pulled of Twitter on a daily basis and analyzed.</small>
+
+Why?
+
+- Study the overall tone of Donald Trump's campaign.
+- Analyse major topics important to Trump's followers.
+- Provide a tool for word associations within Trump-related tweets.
+
+<small>Ca.90MB of tweets have been collected, or ca. 300 thousand tweets from Trump's followers and 430 tweets from Mr. Trump himself (incl. favorites and re-tweets). The data along with code, md file and presentation can find at my [Github account](https://github.com/kklarsen/trumptwitterapp).</small>
+
+TrumpCloud - October 2015.
+========================================================
+class: small-code
+
+<br>
+
+### <small>Trump's WordCloud</small>
+```{r, echo=FALSE}
+
+donaldFile <- "realdonaldtrumpOct15.csv"
+
+donaldCorpus <- getTwitterInterest(donaldFile)
+
+palette <- brewer.pal(7,"PuRd")
+palette <- palette[-(1:2)]
+
+interest_cloud <-wordcloud(donaldCorpus,
+                           scale=c(5,2),
+                           min.freq=10,
+                           max.words=50,
+                           random.order=FALSE,
+                           colors=palette)
+
+text(x = 0.2, y = 0.0, paste("(based on ",mDim, " Tweets)"), 
+              font = 2, 
+              cex =1.2, 
+              col = "firebrick1")
+
+```
+October 6th to 23rd, 2015.
+
+***
+<br>
+### <small>Trump's own Topical Cluster</small>
+```{r, echo = FALSE}
+
+spars <- 0.98
+
+vv <<- TwitterCluster(spars)
+
+
+plot(vv,
+     main = "",
+     font.main = 1,
+     cex.main = 2,
+     col.main = "firebrick2",
+     cex = 0.9)
+              
+```
+
+The Followers
+========================================================
+class: small-code
+
+<br>
+
+### <small>Follower's WordCloud</small>
+```{r, echo=FALSE}
+
+followersFile <- "interest20Oct15.csv"
+
+followersCorpus <- getTwitterInterest(followersFile)
+
+palette <- brewer.pal(7,"PuRd")
+palette <- palette[-(1:2)]
+
+interest_cloud <-wordcloud(followersCorpus,
+                           scale=c(5,2),
+                           min.freq=10,
+                           max.words=50,
+                           random.order=FALSE,
+                           colors=palette)
+
+text(x = 0.2, y = 0.0, paste("(based on ",mDim, " Tweets)"), 
+              font = 2, 
+              cex =1.2, 
+              col = "firebrick1")
+
+```
+October 20th, 2015.
+
+***
+<br>
+### <small>Follower's Topical Cluster</small>
+```{r, echo = FALSE}
+
+spars <- 0.98
+
+vv <<- TwitterCluster(spars)
+
+
+plot(vv,
+     main = "",
+     font.main = 1,
+     cex.main = 2,
+     col.main = "firebrick2",
+     cex = 0.9)
+              
+```
+
+Twitter Analysis App - Word Associations
+========================================================
+class: small-code
+
+<small>Words that Donald Trump has associated with "dumb".</small>
+```{r, echo = FALSE}
+
+donaldFile <- "realdonaldtrumpOct15.csv"
+donaldCorpus <- getTwitterInterest(donaldFile)
+
+mText <- "dumb"
+
+data.frame(TwitterAssociation(mText))
+
+
+````
+For more Trump & his followers word associations [go to my App by clicking this link](https://techneconomy.shinyapps.io/project).
+***
+<small>Words Donald Trump has associated with "illegal" & "mexican".</small>
+```{r, echo = FALSE}
+
+mText <- "illegal"
+
+data.frame(TwitterAssociation(mText))
+
+mText <- "mexican"
+
+data.frame(TwitterAssociation(mText))
+
+````
+
